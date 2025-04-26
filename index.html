@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Spam Classifier</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body, html {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #ffffff;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 2rem;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            transition: transform 0.3s ease;
+            color: #ffffff;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: transform 0.2s, background 0.2s;
+            color: #ffffff;
+        }
+        .btn-primary:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #2563eb, #1d4ed8);
+        }
+        .btn-secondary {
+            background: linear-gradient(90deg, #6b7280, #4b5563);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: transform 0.2s, background 0.2s;
+            color: #ffffff;
+        }
+        .btn-secondary:hover {
+            transform: scale(1.05);
+            background: linear-gradient(90deg, #4b5563, #374151);
+        }
+        .result-alert {
+            animation: fadeIn 0.5s ease-in;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            color: #ffffff;
+        }
+        .textarea-dark {
+            background-color: #1f2937;
+            color: #ffffff;
+            border: 1px solid #4b5563;
+            border-radius: 8px;
+            padding: 0.75rem;
+            resize: none;
+            transition: border-color 0.2s;
+        }
+        .textarea-dark:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        .textarea-dark::placeholder {
+            color: #d1d5db;
+        }
+        .invalid-input {
+            border-color: #ef4444 !important;
+        }
+        .error-text {
+            color: #ffffff;
+        }
+        .spinner {
+            display: none;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 class="text-2xl font-semibold mb-4 text-center">Email Spam Classifier</h2>
+        <div class="mb-4">
+            <textarea id="emailInput" class="form-control textarea-dark w-full" rows="5" placeholder="Paste email text here..." oninput="validateInput()"></textarea>
+            <small id="inputError" class="error-text hidden mt-1">Email must be at least 10 characters long.</small>
+        </div>
+        <div class="flex space-x-4 justify-center">
+            <button class="btn btn-primary" onclick="classifyEmail()" id="classifyBtn">
+                <span id="classifyText">Classify Email</span>
+                <span id="classifySpinner" class="spinner spinner-border spinner-border-sm ms-2"></span>
+            </button>
+            <button class="btn btn-secondary" onclick="clearInput()">Clear</button>
+        </div>
+        <div id="result" class="result-alert text-center d-none">
+            <span id="resultText"></span>
+            <span id="resultIcon" class="ms-2"></span>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function validateInput() {
+            const emailText = document.getElementById('emailInput').value.trim();
+            const inputError = document.getElementById('inputError');
+            const classifyBtn = document.getElementById('classifyBtn');
+            if (emailText.length < 10) {
+                document.getElementById('emailInput').classList.add('invalid-input');
+                inputError.classList.remove('hidden');
+                classifyBtn.disabled = true;
+            } else {
+                document.getElementById('emailInput').classList.remove('invalid-input');
+                inputError.classList.add('hidden');
+                classifyBtn.disabled = false;
+            }
+        }
+
+        async function classifyEmail() {
+            const emailText = document.getElementById('emailInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('resultText');
+            const resultIcon = document.getElementById('resultIcon');
+            const classifyText = document.getElementById('classifyText');
+            const classifySpinner = document.getElementById('classifySpinner');
+
+            if (emailText.length < 10) return;
+
+            classifyText.textContent = 'Classifying...';
+            classifySpinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch('http://localhost:5000/classify', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: emailText })
+                });
+                const data = await response.json();
+
+                classifyText.textContent = 'Classify Email';
+                classifySpinner.style.display = 'none';
+
+                if (data.error) {
+                    resultText.textContent = `Error: ${data.error}`;
+                    resultDiv.className = 'result-alert bg-red-900 text-white d-block';
+                    resultIcon.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+                } else {
+                    resultText.textContent = `Result: ${data.result}`;
+                    resultDiv.className = data.result === 'Spam'
+                        ? 'result-alert bg-red-900 text-white d-block'
+                        : 'result-alert bg-green-900 text-white d-block';
+                    resultIcon.innerHTML = data.result === 'Spam'
+                        ? '<i class="bi bi-exclamation-circle-fill"></i>'
+                        : '<i class="bi bi-check-circle-fill"></i>';
+                }
+            } catch (error) {
+                classifyText.textContent = 'Classify Email';
+                classifySpinner.style.display = 'none';
+                resultText.textContent = 'Error classifying email.';
+                resultDiv.className = 'result-alert bg-red-900 text-white d-block';
+                resultIcon.innerHTML = '<i class="bi bi-x-circle-fill"></i>';
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('emailInput').value = '';
+            document.getElementById('result').className = 'result-alert text-center d-none';
+            validateInput();
+        }
+    </script>
+</body>
+</html>
