@@ -46,11 +46,12 @@ def classify():
         
         # Predict
         prediction = classifier.predict(vectorized_text)[0]
+        probability = classifier.predict_proba(vectorized_text)[0][1]  # Probability of being spam
         result = "Spam" if prediction == 1 else "Not Spam"
         
-        return jsonify({'result': result})
+        return jsonify({'result': result, 'spam_probability': round(probability * 100, 2)})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, host='0.0.0.0', port=5000)
